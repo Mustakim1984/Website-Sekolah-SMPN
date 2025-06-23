@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>SMPN 6 Sorong - Sistem Informasi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: white;
+    }
+    header, footer { background: #0074cc; color: black; text-align: center; padding: 10px; }
+    nav { background: #005fa3; text-align: center; padding: 10px; }
+    nav a { color: black; margin: 0 15px; text-decoration: none; font-weight: bold; }
+    .container {
+      max-width: 1000px;
+      margin: 20px auto;
+      background: rgba(5, 5, 5, 0.1);
+      padding: 20px;
+      border-radius: 8px;
+    }
+    textarea, input, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 8px;
+      box-sizing: border-box;
+      color: black;
+      background-color: white;
+    }
+    .hidden { display: none; }
+    img { max-width: 100%; border-radius: 5px; }
+    section { margin-bottom: 20px; }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyATj4lRBaDbigWsnCtdaof9lWUkTe1mrt8",
+      authDomain: "websekolah-8acc8.firebaseapp.com",
+      projectId: "websekolah-8acc8",
+      storageBucket: "websekolah-8acc8.firebasestorage.app",
+      messagingSenderId: "439286813872",
+      appId: "1:439286813872:web:a69decce284b1512909775",
+      measurementId: "G-2JBY2DJQTK"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.simpanKonten = async function (idInput, docName) {
+      const isi = document.getElementById(idInput).value.trim();
+      await setDoc(doc(db, "konten", docName), { isi });
+      alert("Berhasil disimpan!");
+      tampilkanPublik();
+    };
+
+    window.simpanBerita = async function () {
+      const isi = document.getElementById("isiBerita").value.trim();
+      const file = document.getElementById("gambarBerita").files[0];
+      let gambar = "";
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async function (e) {
+          gambar = e.target.result;
+          await setDoc(doc(db, "konten", "beritaSekolah"), { isi, gambar });
+          tampilkanPublik();
+        };
+        reader.readAsDataURL(file);
+      } else {
+        await setDoc(doc(db, "konten", "beritaSekolah"), { isi, gambar });
+        tampilkanPublik();
+      }
+    };
+
+    async function tampilkanPublik() {
+      const ids = ["pengumuman", "tentangKami", "visiSekolah", "misiSekolah", "artikelSekolah", "kontakKami"];
+      for (let id of ids) {
+        const docSnap = await getDoc(doc(db, "konten", id));
+        document.getElementById("isiDepan" + capitalize(id)).innerText = docSnap.exists() ? docSnap.data().isi : "Belum ada.";
+      }
+      const beritaSnap = await getDoc(doc(db, "konten", "beritaSekolah"));
+      if (beritaSnap.exists()) {
+        const data = beritaSnap.data();
+        document.getElementById("isiDepanBerita").innerHTML = data.isi + (data.gambar ? `<br><img src="${data.gambar}" style="max-width:300px;">` : "");
+      }
+    }
+
+    function capitalize(s) {
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    window.showSection = function(id) {
+      ['beranda', 'login', 'dashboard'].forEach(sec => document.getElementById(sec).classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    };
+
+    window.login = function () {
+      const email = document.getElementById("adminEmail").value;
+      const pass = document.getElementById("adminPassword").value;
+      if (email === "admin@smp6.com" && pass === "admin123") {
+        showSection('dashboard');
+      } else {
+        alert("Login gagal!");
+      }
+    };
+
+    window.logout = function () {
+      showSection('beranda');
+    };
+
+    document.addEventListener("DOMContentLoaded", tampilkanPublik);
+  </script>
+</head>
+<body>
+<header><h1>SMP NEGERI 6 KOTA SORONG</h1></header>
+
+<nav>
+  <a href="#" onclick="showSection('beranda')">Beranda</a>
+  <a href="#" onclick="showSection('login')">Login</a>
+  <a href="#" onclick="showSection('dashboard')">Dashboard Admin</a>
+  <a href="#" onclick="logout()">Logout</a>
+</nav>
+
+<div class="container" id="beranda">
+  <section><h2>Pengumuman</h2><div id="isiDepanPengumuman">Memuat...</div></section>
+  <section><h2>Berita</h2><div id="isiDepanBerita">Memuat...</div></section>
+  <section><h2>Tentang Kami</h2><div id="isiDepanTentangKami">Memuat...</div></section>
+  <section><h2>Visi</h2><div id="isiDepanVisiSekolah">Memuat...</div></section>
+  <section><h2>Misi</h2><div id="isiDepanMisiSekolah">Memuat...</div></section>
+  <section><h2>Artikel</h2><div id="isiDepanArtikelSekolah">Memuat...</div></section>
+  <section><h2>Kontak</h2><div id="isiDepanKontakKami">Memuat...</div></section>
+</div>
+
+<div class="container hidden" id="login">
+  <h2>Login Admin</h2>
+  <input type="email" id="adminEmail" placeholder="Email">
+  <input type="password" id="adminPassword" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
+
+<div class="container hidden" id="dashboard">
+  <h2>Dashboard Admin</h2>
+
+  <h3>Pengumuman</h3>
+  <textarea id="isiPengumuman" placeholder="Tulis pengumuman..."></textarea>
+  <button onclick="simpanKonten('isiPengumuman', 'pengumuman')">Simpan Pengumuman</button>
+
+  <h3>Tentang Kami</h3>
+  <textarea id="isiTentangKami" placeholder="Tulis tentang kami..."></textarea>
+  <button onclick="simpanKonten('isiTentangKami', 'tentangKami')">Simpan Tentang</button>
+
+  <h3>Visi</h3>
+  <textarea id="isiVisiSekolah" placeholder="Tulis visi..."></textarea>
+  <button onclick="simpanKonten('isiVisiSekolah', 'visiSekolah')">Simpan Visi</button>
+
+  <h3>Misi</h3>
+  <textarea id="isiMisiSekolah" placeholder="Tulis misi..."></textarea>
+  <button onclick="simpanKonten('isiMisiSekolah', 'misiSekolah')">Simpan Misi</button>
+
+  <h3>Artikel</h3>
+  <textarea id="isiArtikelSekolah" placeholder="Tulis artikel..."></textarea>
+  <button onclick="simpanKonten('isiArtikelSekolah', 'artikelSekolah')">Simpan Artikel</button>
+
+  <h3>Kontak</h3>
+  <textarea id="isiKontakKami" placeholder="Tulis kontak..."></textarea>
+  <button onclick="simpanKonten('isiKontakKami', 'kontakKami')">Simpan Kontak</button>
+
+  <h3>Berita</h3>
+  <textarea id="isiBerita" placeholder="Tulis berita..."></textarea>
+  <input type="file" id="gambarBerita" accept="image/*">
+  <button onclick="simpanBerita()">Simpan Berita</button>
+</div>
+
+<footer>© 2025 SMP NEGERI 6 KOTA SORONG</footer>
+</body>
+</html>
